@@ -8,40 +8,41 @@ import (
 )
 
 const (
-	SERVER_HOST = "localhost"
-	SERVER_PORT = "4949"
-	SERVER_TYPE = "tcp"
+	SERVER_HOST     = "localhost"
+	SERVER_PORT     = "4949"
+	SERVER_PROTOCOL = "tcp"
+	BUFFER_SIZE     = 1024
 )
 
 var serverHost string
 var serverPort string
-var serverType string
+var serverProtocol string
 
 func init() {
 	flag.StringVar(&serverHost, "host", SERVER_HOST, "Server IP address")
-	flag.StringVar(&serverPort, "port", SERVER_PORT, "port for the Server")
-	flag.StringVar(&serverType, "type", SERVER_TYPE, "Network type for the Server")
+	flag.StringVar(&serverPort, "port", SERVER_PORT, "Port for the Server")
+	flag.StringVar(&serverProtocol, "protocol", SERVER_PROTOCOL, "Protocol for the Server")
 }
 
 func main() {
 
 	flag.Parse()
 
-	fmt.Println(serverHost, serverPort, serverType)
-
 	startServer()
 }
 
 func startServer() {
-	server, err := net.Listen(SERVER_TYPE, SERVER_HOST+":"+SERVER_PORT)
+	address := fmt.Sprintf("%s:%s", SERVER_HOST, SERVER_PORT)
+
+	server, err := net.Listen(SERVER_PROTOCOL, address)
 	if err != nil {
 		fmt.Println("Error listening:", err.Error())
 		os.Exit(1)
 	}
 	defer server.Close()
 
-	fmt.Println("Listening on " + SERVER_HOST + ":" + SERVER_PORT)
-	fmt.Println("Waiting for client...")
+	fmt.Println("Server Listening on " + SERVER_HOST + ":" + SERVER_PORT)
+	fmt.Printf("Server Waiting for Clients...\n\n")
 
 	for {
 		connection, err := server.Accept()
@@ -50,15 +51,28 @@ func startServer() {
 			os.Exit(1)
 		}
 
-		fmt.Println("Client connected with address : ", connection.RemoteAddr())
+		go handleClient(connection)
+	}
+}
 
-		buf := make([]byte, 512)
+func handleClient(conn net.Conn) {
+	defer conn.Close()
 
-		connection.Read(buf)
-		if err != nil {
-			fmt.Println("Error while reading : ", err.Error())
-		}
+	fmt.Println("Client connected with address : ", conn.RemoteAddr())
 
-		fmt.Println("Received data from client : ", string(buf[:]))
+	buf := make([]byte, BUFFER_SIZE)
+
+	dataLen, err := conn.Read(buf)
+	if err != nil {
+		fmt.Println("Error reading:", err.Error())
+	}
+
+	data := string(buf[:dataLen])
+
+	fmt.Println("Received from client : ", conn.RemoteAddr(), " and data : ", data)
+
+	_, err = conn.Write([]byte("Thanks! Got your message:" + data))
+	if err != nil {
+		fmt.Println("Error Writing:", err.Error())
 	}
 }
