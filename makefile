@@ -1,3 +1,14 @@
+tidy:
+	go mod tidy
+	go mod vendor
+
+lint:
+	CGO_ENABLED=0 go vet ./...
+	staticcheck -checks=all ./...
+
+vuln-check:
+	govulncheck ./...
+
 run:
 	go run main.go
 
