@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io"
 	"net"
 	"os"
 )
@@ -62,17 +63,33 @@ func handleClient(conn net.Conn) {
 
 	buf := make([]byte, BUFFER_SIZE)
 
+	for {
+		err := readData(conn, buf)
+		if err != nil {
+			break
+		}
+	}
+}
+
+func readData(conn net.Conn, buf []byte) error {
+
 	dataLen, err := conn.Read(buf)
 	if err != nil {
-		fmt.Println("Error reading:", err.Error())
+		if err == io.EOF {
+			fmt.Println("Client ", conn.RemoteAddr(), " disconnected : ", err.Error())
+			return io.EOF
+		}
 	}
 
 	data := string(buf[:dataLen])
 
 	fmt.Println("Received from client : ", conn.RemoteAddr(), " and data : ", data)
 
-	_, err = conn.Write([]byte("Thanks! Got your message:" + data))
+	_, err = conn.Write([]byte("Got your message:" + data))
 	if err != nil {
 		fmt.Println("Error Writing:", err.Error())
+		return err
 	}
+
+	return nil
 }
