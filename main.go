@@ -52,7 +52,7 @@ func startServer() {
 			os.Exit(1)
 		}
 
-		go handleClient(connection)
+		handleClient(connection)
 	}
 }
 
@@ -85,7 +85,7 @@ func readData(conn net.Conn, buf []byte) error {
 
 	fmt.Println("Received from client : ", conn.RemoteAddr(), " and data : ", data)
 
-	_, err = conn.Write([]byte("Got your message:" + data))
+	_, err = conn.Write([]byte("Got your message : " + data))
 	if err != nil {
 		fmt.Println("Error Writing:", err.Error())
 		return err
